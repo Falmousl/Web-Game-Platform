@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+    <title>Web Action Game</title>
+    <style>
+        /* Reset margins */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* Sidebar styling (updated as per your request) */
+        .sidebar {
+            width: 200px;
+            height: 100vh;
+            background-color: black; /* Black sidebar */
+            position: fixed; /* Fixes the sidebar on the left */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 20px;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            color: white;
+            background-color: #333;
+            padding: 10px;
+            margin: 5px 0;
+            width: 80%;
+            text-align: center;
+            font-size: 18px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            display: block;
+        }
+
+        .sidebar a:hover {
+            background-color: #555; /* Hover effect */
+        }
+
+        .sidebar .active {
+            background-color: #4CAF50; /* Green for the active link */
+        }
+
+        /* Game container styling */
+        .game-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center; /* Center the game horizontally */
+            align-items: center; /* Center the game vertically */
+            background-color: black; /* Ensure the background is black */
+            margin-left: 200px; /* Leave space for the sidebar */
+        }
+
+        /* Canvas styling */
+        #canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="http://127.0.0.1:5001" id="chess-link">Chess</a>
+        <a href="http://127.0.0.1:5000" id="action-game-link">2D Action Game</a>
+    </div>
+
+    <!-- Game Container -->
+    <div class="game-container">
+        <canvas id="canvas">
+            Your browser does not support the canvas tag.
+        </canvas>
+    </div>
+
+    <script src="index.js"></script>
+    <script>
+        // Ensure the canvas and container take up the full available space
+        const gameContainer = document.querySelector(".game-container");
+        const canvas = document.getElementById("canvas");
+
+        function adjustCanvas() {
+            const sidebarWidth = document.querySelector(".sidebar").offsetWidth;
+            const totalWidth = window.innerWidth;
+            const totalHeight = window.innerHeight;
+
+            // Set canvas to fill available space
+            gameContainer.style.width = `${totalWidth - sidebarWidth}px`;
+            gameContainer.style.height = `${totalHeight}px`;
+
+            canvas.width = totalWidth - sidebarWidth;
+            canvas.height = totalHeight;
+        }
+
+        window.addEventListener("resize", adjustCanvas);
+        adjustCanvas();
+
+        // Retain original GODOT_CONFIG
+        const GODOT_CONFIG = {
+            "args": [],
+            "canvasResizePolicy": 1,
+            "ensureCrossOriginIsolationHeaders": true,
+            "executable": "index",
+            "experimentalVK": false,
+            "fileSizes": { "index.pck": 2772592, "index.wasm": 43016933 },
+            "focusCanvas": true,
+            "gdextensionLibs": []
+        };
+
+        const GODOT_THREADS_ENABLED = false;
+        const engine = new Engine(GODOT_CONFIG);
+
+        engine.startGame().catch(console.error);
+
+        // Highlight active link in the sidebar
+        const currentUrl = window.location.href;
+        if (currentUrl.includes("5001")) {
+            document.getElementById("chess-link").classList.add("active");
+        } else if (currentUrl.includes("5000")) {
+            document.getElementById("action-game-link").classList.add("active");
+        }
+    </script>
+</body>
+</html>

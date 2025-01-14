@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+/* Sidebar (black box) */
+.sidebar {
+    width: 200px; /* Increase width for better spacing */
+    height: 100vh;
+    background-color: black;
+    position: fixed;
+    display: flex;
+    flex-direction: column; /* Align items vertically */
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 20px;
+}
+
+/* Button Styles for sidebar */
+.sidebar a {
+    text-decoration: none;
+    color: white; /* Make text white */
+    background-color: #333;
+    padding: 10px;
+    width: 80%;
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border-radius: 5px;
+    display: block;
+}
+
+.sidebar a:hover {
+    background-color: #555; /* Darker background color on hover */
+}
+
+/* For faded (inactive) links */
+.sidebar .inactive {
+    opacity: 0.5;
+}
+
+/* Sidebar active page link */
+.sidebar .active {
+    background-color: #4CAF50; /* Green for active page */
+}
+
+/* Main content section */
+.main-content {
+    margin-left: 220px; /* Adjust to leave space for the sidebar */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Styling for chessboard */
+.chessboard {
+    display: grid;
+    grid-template-columns: repeat(8, 80px); /* 8 columns, each 80px wide */
+    grid-template-rows: repeat(8, 80px); /* 8 rows, each 80px high */
+    margin: 20px 0; /* Ensures some space around the chessboard */
+    border: 3px solid black; /* Border around the chessboard */
+    position: relative; /* Added relative positioning */
+}
+
+/* Styling for the reset button */
+#resetButton {
+    display: block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #4CAF50; /* Green */
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+#resetButton:hover {
+    background-color: #45a049; /* Darker green on hover */
+}
+
+/* Styling for highlighted cells and valid moves */
+.chessboard .highlight,
+.chessboard .valid-move {
+    outline: 3px solid red; /* Red outline for valid move */
+    z-index: 2; /* Ensure they appear above the board */
+}
+
+</style>
+
+<div class="container">
+    <!-- Left Sidebar (Black box) -->
+    <div class="sidebar">
+        <a href="http://127.0.0.1:5001" class="active" id="chess-link">Chess</a>
+        <a href="http://127.0.0.1:5000" id="action-game-link">2D Action Game</a>
+    </div>
+
+    <!-- Main Content (Chessboard and Reset Button) -->
+    <div class="main-content">
+        <div class="chessboard">
+            {% for row in board %}
+                {% for cell, row_idx, col_idx in row %}
+                    <div
+                        class="{{ 'black' if (row_idx + col_idx) % 2 == 0 else 'white' }}"
+                        data-row="{{ row_idx }}"
+                        data-col="{{ col_idx }}"
+                        data-piece="{{ cell if cell.startswith('♙') or cell.startswith('♖') or cell.startswith('♘') or cell.startswith('♗') or cell.startswith('♕') or cell.startswith('♔') else '' }}"
+                        onclick="handleClick(this)"
+                    >
+                        {{ cell|safe }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+        <button id="resetButton" onclick="resetBoard()">Reset Board</button>
+    </div>
+</div>
+
+<script>
+    // Check if the current page is Chess
+    const currentUrl = window.location.href;
+    if (currentUrl.includes('chess')) {
+        document.getElementById("chess-link").classList.add("inactive"); // Add "inactive" class to Chess link
+    } else {
+        document.getElementById("action-game-link").classList.add("inactive"); // Add "inactive" class to Action Game link
+    }
+
+    let selectedPiece = null; // Stores the currently selected piece and its position
+
+    function handleClick(cell) {
+        const piece = cell.getAttribute("data-piece");
+        const row = cell.getAttribute("data-row");
+        const col = cell.getAttribute("data-col");
+
+        // If a white piece is clicked and no piece is currently selected
+        if (!selectedPiece && piece && ['♙', '♖', '♘', '♗', '♕', '♔'].some(p => piece.startsWith(p))) {
+            // Remove previous highlights
+            clearHighlights();
+
+            // Highlight the selected cell
+            cell.classList.add("highlight");
+            selectedPiece = { row, col }; // Store the selected piece's position
+
+            // Send a request to get valid moves
+            fetch("/get-valid-moves", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ row, col }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const validMoves = data.valid_moves;
+
+                // Highlight valid moves
+                validMoves.forEach(move => {
+                    const targetCell = document.querySelector(
+                        `.chessboard div[data-row="${move[1]}"][data-col="${move[0]}"]`
+                    );
+                    if (targetCell) {
+                        targetCell.classList.add("valid-move");
+                        targetCell.setAttribute("data-valid", "true"); // Mark as valid
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        } 
+        // If a valid move is clicked
+        else if (cell.classList.contains("valid-move") && selectedPiece) {
+            const endRow = cell.getAttribute("data-row");
+            const endCol = cell.getAttribute("data-col");
+
+            // Send a request to move the piece
+            fetch("/move-piece", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    start_row: selectedPiece.row,
+                    start_col: selectedPiece.col,
+                    end_row: endRow,
+                    end_col: endCol,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const updatedBoard = data.board;
+
+                // Update the frontend board
+                updateBoard(updatedBoard);
+
+                // Clear highlights and reset selection
+                clearHighlights();
+                selectedPiece = null;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        } else {
+            // If clicking outside valid options, clear selection
+            clearHighlights();
+            selectedPiece = null;
+        }
+    }
+
+    function clearHighlights() {
+        document.querySelectorAll(".chessboard div.highlight").forEach(cell => {
+            cell.classList.remove("highlight");
+        });
+        document.querySelectorAll(".chessboard div.valid-move").forEach(cell => {
+            cell.classList.remove("valid-move");
+            cell.removeAttribute("data-valid");
+        });
+    }
+
+    function updateBoard(board) {
+        board.forEach(row => {
+            row.forEach(([piece, rowIdx, colIdx]) => {
+                const cell = document.querySelector(
+                    `.chessboard div[data-row="${rowIdx}"][data-col="${colIdx}"]`
+                );
+                if (cell) {
+                    cell.setAttribute("data-piece", piece);
+                    cell.innerHTML = piece || ""; // Update the cell content
+                }
+            });
+        });
+    }
+
+    function resetBoard() {
+        fetch("/reset-board", {
+            method: "POST",
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message); // Show the reset message
+            updateBoard(data.board); // Reset the board with the response
+        })
+        .catch(error => {
+            console.error("Error resetting board:", error);
+        });
+    }
+</script>
+{% endblock %}

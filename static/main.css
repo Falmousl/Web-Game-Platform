@@ -1,0 +1,95 @@
+/* Ensure the body and html take up the full viewport */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+/* Main container for the layout */
+.container {
+    display: flex;
+    height: 100%; /* Make the container take the full height of the screen */
+}
+
+/* Left Sidebar */
+.sidebar {
+    width: 300px; /* Increased width for the sidebar */
+    background-color: black;
+    height: 100vh; /* Full height */
+    margin: 0; /* Ensure no margin around the sidebar */
+    padding: 0; /* No padding inside sidebar */
+}
+
+/* Main content (Chessboard and Reset Button) */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    margin-left: 0px; /* Move content a bit to the left (from 250px to 230px) */
+    width: calc(100% - 230px); /* Ensure the content area takes up the rest of the screen */
+    padding-right: 30px; /* Add slight gap from the right edge */
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
+    height: 100%; /* Ensure full height */
+}
+
+/* Chessboard container (adjusting position of reset button) */
+.chessboard-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the board horizontally */
+    width: 100%; /* Ensure the chessboard container takes the full width of the available space */
+    max-width: 800px; /* Limit the max width to keep the board at a reasonable size */
+    margin: 0 auto; /* Automatically center the board within the container */
+}
+
+/* Chessboard Styles */
+.chessboard {
+    display: grid;
+    grid-template-columns: repeat(8, 80px); /* 8 columns */
+    grid-template-rows: repeat(8, 80px); /* 8 rows */
+    border: 5px solid black; /* Border around chessboard */
+    margin-bottom: 20px; /* Add space between the board and reset button */
+}
+
+/* Default cell styling */
+.chessboard div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Black and white cell colors */
+.chessboard .black {
+    background-color: #769656;
+}
+
+.chessboard .white {
+    background-color: #eeeed2;
+}
+
+/* Highlight the selected cell and valid moves */
+.chessboard div.highlight,
+.chessboard div.valid-move {
+    outline: 3px solid red;
+}
+
+/* Reset Button Styling */
+#resetButton {
+    padding: 10px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px; /* Align button below the board */
+    transition: background-color 0.3s ease;
+}
+
+#resetButton:hover {
+    background-color: #45a049;
+}
